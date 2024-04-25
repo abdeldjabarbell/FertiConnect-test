@@ -250,6 +250,7 @@ section{
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
 }
 .logo_ferti_rond{
   width: 45px;
@@ -300,9 +301,37 @@ input:focus {
 }
 .conncxion_inputs a:hover{
   color: var(--btnHover-color);
+
+}
+
+.img_login{
+  width: 100%;
+  display: flex;
+}
+.img_login img{
+  width: 200px;
+  height: 200px;
+
 }
   /*-----------------------------------------------------btn*/
 
+  .btnVide{
+    display: block; 
+    width: 150px; 
+    padding: 10px; 
+    color: var(--second2-bg-color); 
+    background-color: transparent;
+    border: none; 
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s; 
+    border: 1px solid var(--second2-bg-color);
+  }
+  .btnVide:hover {
+    background-color:var(--second2-bg-color) ;
+    color: var(--bg-color); 
+
+  }
   .btn {
     display: block; 
     width: 150px; 
@@ -464,11 +493,45 @@ input:focus {
   /*-----------------------------------------------------loader*/
 
   
+  .wating{
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background-color: #004e64aa;
+    z-index: 2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    justify-content: center;
+    align-items: center;
+
+  }
+  .wating_img{
+    width:60px;
+    height: 60px;
+    display: flex;
+    background-color: var(--bg-color);
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+  }
+  .wating_img img{
+    width:50px;
+    height: 50px;
+    display: inline-block;
+    animation: rotation 2s linear infinite; /* Changez la durée (2s) selon vos préférences */
+
+  }
 
 
 
+  @keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
 
-
+  
 
 
 

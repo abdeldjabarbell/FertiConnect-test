@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", function() {
                   caeee_logo.style.height = "100vh";  
                   caeee_logo.style.borderRadius="0";  
                   setTimeout(function() {
-                    imagelogo.style.top = "-300%";
-                    bg_choix_user.style.top = "-200%";
+                    imagelogo.style.top = "-250%";
+                    bg_choix_user.style.top = "-140%";
                     textLogo.style.display="none";
                 }, 500);
                }, 1500);
@@ -55,8 +55,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 1); // Change la valeur pour contrôler la vitesse de rotation
     
         setTimeout(function() {
-
-
+            let typeOfUser = "patient";
+            window.location.href = `medecins/ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
         }, 600);
     });
 
@@ -69,14 +69,13 @@ document.addEventListener("DOMContentLoaded", function() {
             loadinglogo1.style.transform = ' rotate(' + angle + 'deg)'; // Applique la rotation
         }, 1); // Change la valeur pour contrôler la vitesse de rotation
         setTimeout(function() {
-            window.location.replace("ferticonnectmedecin-login.html");
-
+            let typeOfUser = "medecin";
+            window.location.href = `medecins/ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
         }, 600);
-
     });
 
-
 });
+
 
 // Fonction pour la rotation
 function rotate(element) {
