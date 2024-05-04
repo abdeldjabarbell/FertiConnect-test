@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
         setTimeout(function() {
             let typeOfUser = "patient";
-            window.location.href = `medecins/ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
+            window.location.href = `ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
         }, 600);
     });
 
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 1); // Change la valeur pour contrôler la vitesse de rotation
         setTimeout(function() {
             let typeOfUser = "medecin";
-            window.location.href = `medecins/ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
+            window.location.href = `ferticonnectmedecin-login.html?typeOfUser=${typeOfUser}`; 
         }, 600);
     });
 
