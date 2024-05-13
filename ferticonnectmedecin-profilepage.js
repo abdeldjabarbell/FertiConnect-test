@@ -35,8 +35,9 @@ titleoptionmycabinsbg2.addEventListener('click', function() {
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js";
 import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-auth.js";
-import { getFirestore, doc,setDoc,deleteDoc, getDoc,query, where , getDocs,updateDoc ,addDoc ,collection ,serverTimestamp} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-storage.js';
+import { getFirestore, doc, getDoc, updateDoc, addDoc,setDoc, deleteDoc, query, orderBy, limit, where, getDocs, collection, serverTimestamp as firestoreServerTimestamp  } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
+import { getStorage,  ref as storageRef  , uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-storage.js';
+import { getDatabase,  ref as databaseRef, push, onValue, serverTimestamp as databaseServerTimestamp  } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-database.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBlAbn2DAuE4kSVDtsNgdttwDeBT78YmL8",
@@ -45,27 +46,101 @@ const firebaseConfig = {
     storageBucket: "ferticonnect.appspot.com",
     messagingSenderId: "1061809723490",
     appId: "1:1061809723490:web:307b939a9e256dcc21593b",
-    measurementId: "G-XZT8HYB0DT"
+    measurementId: "G-XZT8HYB0DT",
+    databaseURL: "https://ferticonnect-default-rtdb.europe-west1.firebasedatabase.app/"
   };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
   const storage = getStorage(app);
-
-
+  
+  
   auth.onAuthStateChanged(async (user) => {
     if (user) {
-        
         // Récupération de l'adresse e-mail de l'utilisateur connecté
+
+        
         const mail = user.email;
         const iduser = user.uid;
+        console.log('iduser = ' + iduser);
+        const doclistemessageref = collection(db, typeuseruserauth, iduser, "listeMessage");
+        const querySnapshot = await getDocs(doclistemessageref);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const idRoomMessage = data.idRoomMessage;
+            const idamisMessage = data.idamisMessage;
+            const typeamisMessage = data.typeamisMessage;
+            const messagebutton = document.getElementById('messagebutton');
+            const messagebuttonicon = document.getElementById('messagebuttonicon');
 
+            if (idamisMessage === useridclick) {
+                messagebuttonicon.style.color = "#007bbe";
+                messagebutton.addEventListener('click', async function() {
+                    alert('Vous avez déjà créé un espace de messagerie entre vous deux. Veuillez vérifier votre liste de messages.');
+
+                });
+            }   
+        });
+        
+        console.log("G");
+
+        messagebutton.addEventListener('click', async function() {
+          console.log("messagebutton");
+
+            const user = auth.currentUser;
+            if (user) {
+                 messagebutton.style.display = "none";
+                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let creatIdMessageRoom = '';
+                for (let i = 0; i < 30; i++) {
+                    const randomIndex = Math.floor(Math.random() * characters.length);
+                    creatIdMessageRoom += characters[randomIndex];
+                }
+                const userId = user.uid; 
+                try {
+                    await setDoc(doc(db, typeuseruserauth, userId, "listeMessage",creatIdMessageRoom), {
+                        idRoomMessage: creatIdMessageRoom,
+                        idamisMessage: useridclick,
+                        TypeamisMessage :typeuserclick
+
+                    });
+                    await setDoc(doc(db, typeuserclick, useridclick, "listeMessage",creatIdMessageRoom), {
+                        idRoomMessage: creatIdMessageRoom,
+                        idamisMessage: userId,
+                        TypeamisMessage :typeuseruserauth
+                    });
+                     // Autres opérations avec les données de la cabine...
+                     const database = getDatabase(app);
+                     const messageRef = databaseRef(database, creatIdMessageRoom);
+                     push(messageRef, {
+                        text: "Salut! C'est super de vous retrouver sur Ferticonnet!  🩺",
+                        id_usersent:userId,
+                        timestamp: new Date().getTime() // Use local timestamp
+                     })
+                    .catch((error) => {
+                        console.error("Error adding message: ", error);
+                        wating.style.display="none";
+                    });
+
+                    alert('Veuillez vérifier votre liste de messages.');
+
+                   
+                }catch(error) {
+                    console.error("Error adding document: ", error);
+                }
+                
+
+            }
+ 
+            
+        });
+      
         const log = document.getElementById("log");
         log.addEventListener('click', function() {
             window.history.back();
         });
-
+        
         const docRef = doc(db, typeuserclick, useridclick);
         try {
             const docSnap = await getDoc(docRef); 
@@ -77,10 +152,32 @@ const firebaseConfig = {
                 const imguser = datauser.imguser;
                 const imgcouvertureuser = datauser.imgcouvertureuser;
                 const formulaire = datauser.formulaire;
+
+                const timestamp = datauser.timestamp;
+                const seconds = timestamp.seconds;
+                const nanoseconds = timestamp.nanoseconds;
+                // Créer une date à partir de la représentation Firebase Timestamp
+                const milliseconds = seconds * 1000 + nanoseconds / 1000000; // Convertir nanosecondes en millisecondes
+                const date = new Date(milliseconds);
                 
+                // Tableau des noms de mois
+                const monthNames = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+                
+                // Extraire les composantes de la date
+                const day = date.getDate();
+                const monthIndex = date.getMonth(); // Les mois commencent à 0
+                const monthName = monthNames[monthIndex];
+                const year = date.getFullYear();
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                
+                // Formater la date en chaîne de caractères "DD Mois YY heure"
+                const formattedTimestamp = `${day} ${monthName} ${year}`;
+                
+                const fotherprofile = document.getElementById("fotherprofile");
 
                 nameuser.innerHTML=prenomuserprofile+" "+ nameuserprofile;
-
+                fotherprofile.innerHTML="Cet utilisateur s'est enregistré en tant que "+typeuserclick+" sur Ferticonnect le "+formattedTimestamp;
                 numberamisList();
                 async function numberamisList(){
                     const docRef = collection(db,typeuserclick,useridclick,"amis");
@@ -88,11 +185,13 @@ const firebaseConfig = {
                     const numberOfDocuments = querySnapshot.size;
                     numberdabonner.innerHTML = numberOfDocuments +" abonnés";
                 }
-
+                
                 if(typeuserclick === "medecin"){
                     const nameuser_i = document.getElementById("nameuser_i");
                     nameuser_i.style.display="flex";
-                    mycabinsbg2.style.display="flex";
+                    if(iduser=== useridclick){
+                        mycabinsbg2.style.display="flex";
+                    }
                 }
                 if(useridclick === iduser){
                     let a = 0;
@@ -223,6 +322,7 @@ const firebaseConfig = {
                             }
                         }
                     });
+                    
                     const photochanger_couverture_i = document.getElementById("photochanger_couverture_i");
                     const nouveauimage_couv = document.getElementById("nouveauimage_couv");
                     const fermer2 = document.getElementById("fermer2");
@@ -230,6 +330,7 @@ const firebaseConfig = {
                     const Done_couv = document.getElementById("Done_couv");
                     const loader_couv = document.getElementById("loader_couv");
                     const original_couv = document.getElementById("original_couv");
+                    
                     const photocouverturechangerbg = document.getElementById("photocouverturechangerbg");
                     etap3.addEventListener('click', function() {
                         photocouverturechangerbg.style.display="flex"
@@ -298,96 +399,123 @@ const firebaseConfig = {
                 }
                 else{
 
-                    if (imguser==="") { // Vérification si imguser existe
-                        photoprofile.src = "img/ferticonnectiLogoGreen.png";
-                    } else {
-                        photoprofile.src = imguser;
-                    }
-                    if (imgcouvertureuser==="") { // Vérification si couvertur existe
-                        photocouverture.src = "img/ferticonnectiLogoWhite.png";
-                    } else {
-                        photocouverture.src = imgcouvertureuser;
-                    }
-                    abonnerbutton.style.display="flex";
-                    messagebutton.style.display="flex";
-                    infobtn.style.display="none";
-                    compeleleprofile.style.display="none";
-
-                    const user = auth.currentUser;
-                    if (user) {
-                        const userId = user.uid;                      
-                          const docRef = collection(db,typeuserclick,useridclick,"amis");
-                          const querySnapshot = await getDocs(docRef);
-                          querySnapshot.forEach((doc) => {
-                              const data = doc.data();
-                              const useramisid= data.iduser;
-                              abonnerbutton.classList.contains("btnprfil");
-                              if (useramisid === userId) {
-                                abonnerbutton.classList.add("act");
-                              } else {
-                                if (abonnerbutton.classList.contains("act")) {
-                                    abonnerbutton.classList.remove("act");
-                                }
-                              }
-                          });
-                      
-                    }
-
-                    abonnerbutton.addEventListener('click', async function() {
-                        if (abonnerbutton.classList.contains("btnprfil")) {
-                            if (abonnerbutton.classList.contains("act")) {
-                                abonnerbutton.classList.remove("act");
-                                const user = auth.currentUser;
-                        
-                                if (user) {
-                                    const userId = user.uid; 
-                                    const amisCollectionRef = collection(db, typeuserclick, useridclick, "amis");
-                                    const querySnapshot = await getDocs(query(amisCollectionRef, where("iduser", "==", userId)));
-                                    querySnapshot.forEach(async (doc) => {
-                                        try {
-                                            await deleteDoc(doc.ref);
-                                            await numberamisList();
-                                        } catch (error) {
-                                            console.error("Erreur lors de la suppression du document de la sous-collection 'amis':", error);
-                                        }
-                                    });
-                    
-                                    // Supprimer l'utilisateur actuel de sa propre liste d'amis
-                                    const mesamisCollectionRef = collection(db, typeuseruserauth, userId, "amis");
-                                    const mesquerySnapshot = await getDocs(query(mesamisCollectionRef, where("iduser", "==", useridclick)));
-                                    mesquerySnapshot.forEach(async (doc) => {
-                                        try {
-                                            await deleteDoc(doc.ref);
-                                        } catch (error) {
-                                            console.error("Erreur lors de la suppression du document de la sous-collection 'mes amis':", error);
-                                        }
-                                    });
-                                }
-                        
-                            } else {
-                                // ajouter amis
-                                const user = auth.currentUser;
-                                if (user) {
-                                    const userId = user.uid;
-                                    // Ajouter l'utilisateur cliqué comme ami
-                                    const docRef = await addDoc(collection(db, typeuserclick, useridclick, "amis"), {
-                                        iduser: userId,
-                                        typeuser :typeuseruserauth,
-                                    });
-                                    await numberamisList();
-
-                                    // Ajouter l'utilisateur cliqué à la liste d'amis de l'utilisateur actuel
-                                    const mesamisRef = await addDoc(collection(db, typeuseruserauth, userId, "amis"), {
-                                        iduser: useridclick,
-                                        typeuser :typeuserclick,
-                                    });
-                                }
-                                abonnerbutton.classList.add("act");
-                            }
+                    if(typeuseruserauth === "patient"){
+                        if(typeuserclick==="medecin"){
+                            afficheleprofile_med();
                         }
-                    });
-                    
-                    
+                        else{
+                            photoprofile.src = "img/ferticonnectiLogoGreen.png";
+                            photocouverture.src = "img/ferticonnectiLogoWhite.png";
+                            nameuser.innerHTML="Utilisateur fertiConnect";
+                            abonnerbutton.style.display="none";
+                            messagebutton.style.display="none";
+                            infobtn.style.display="none";
+                            compeleleprofile.style.display="none";
+
+
+                        }
+
+                        
+                    }else{
+                        afficheleprofile_med();
+
+                    }
+
+                    async function afficheleprofile_med(){
+                        
+                         if (imguser==="") { // Vérification si imguser existe
+                             photoprofile.src = "img/ferticonnectiLogoGreen.png";
+                         } else {
+                             photoprofile.src = imguser;
+                         }
+                         if (imgcouvertureuser==="") { // Vérification si couvertur existe
+                             photocouverture.src = "img/ferticonnectiLogoWhite.png";
+                         } else {
+                             photocouverture.src = imgcouvertureuser;
+                         }
+                         abonnerbutton.style.display="flex";
+                         messagebutton.style.display="flex";
+                         infobtn.style.display="none";
+                         compeleleprofile.style.display="none";
+                         
+                         const user = auth.currentUser;
+                         if (user) {
+                             const userId = user.uid;                      
+                               const docRef = collection(db,typeuserclick,useridclick,"amis");
+                               const querySnapshot = await getDocs(docRef);
+                               querySnapshot.forEach((doc) => {
+                                   const data = doc.data();
+                                   const useramisid= data.iduser;
+                                   abonnerbutton.classList.contains("btnprfil");
+                                   if (useramisid === userId) {
+                                     abonnerbutton.classList.add("act");
+                                   } else {
+                                     if (abonnerbutton.classList.contains("act")) {
+                                         abonnerbutton.classList.remove("act");
+                                     }
+                                   }
+                               });
+                           
+                         }
+                         
+                         abonnerbutton.addEventListener('click', async function() {
+                             if (abonnerbutton.classList.contains("btnprfil")) {
+                                 if (abonnerbutton.classList.contains("act")) {
+                                     abonnerbutton.classList.remove("act");
+                                     const user = auth.currentUser;
+                             
+                                     if (user) {
+                                         const userId = user.uid; 
+                                         const amisCollectionRef = collection(db, typeuserclick, useridclick, "amis");
+                                         const querySnapshot = await getDocs(query(amisCollectionRef, where("iduser", "==", userId)));
+                                         querySnapshot.forEach(async (doc) => {
+                                             try {
+                                                 await deleteDoc(doc.ref);
+                                                 await numberamisList();
+                                             } catch (error) {
+                                                 console.error("Erreur lors de la suppression du document de la sous-collection 'amis':", error);
+                                             }
+                                         });
+                                         
+                                         // Supprimer l'utilisateur actuel de sa propre liste d'amis
+                                         const mesamisCollectionRef = collection(db, typeuseruserauth, userId, "amis");
+                                         const mesquerySnapshot = await getDocs(query(mesamisCollectionRef, where("iduser", "==", useridclick)));
+                                         mesquerySnapshot.forEach(async (doc) => {
+                                             try {
+                                                 await deleteDoc(doc.ref);
+                                             } catch (error) {
+                                                 console.error("Erreur lors de la suppression du document de la sous-collection 'mes amis':", error);
+                                             }
+                                         });
+                                     }
+                             
+                                 } else {
+                                     // ajouter amis
+                                     const user = auth.currentUser;
+                                     if (user) {
+                                         const userId = user.uid;
+                                         // Ajouter l'utilisateur cliqué comme ami
+                                         const docRef = await addDoc(collection(db, typeuserclick, useridclick, "amis"), {
+                                             iduser: userId,
+                                             typeuser :typeuseruserauth,
+                                         });
+                                         await numberamisList();
+     
+                                         // Ajouter l'utilisateur cliqué à la liste d'amis de l'utilisateur actuel
+                                         const mesamisRef = await addDoc(collection(db, typeuseruserauth, userId, "amis"), {
+                                             iduser: useridclick,
+                                             typeuser :typeuserclick,
+                                         });
+                                     }
+                                     abonnerbutton.classList.add("act");
+                                 }
+                             }
+                         });
+                         
+                         
+                    }
+
+
                     
                     
                     

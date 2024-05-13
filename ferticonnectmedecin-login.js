@@ -104,7 +104,7 @@ const wating = document.getElementById("wating");
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword ,sendPasswordResetEmail,signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-auth.js";
-import { getFirestore, doc,addDoc, setDoc, query, where , collection, getDocs} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
+import { getFirestore, doc,addDoc, setDoc, query,serverTimestamp, where , collection, getDocs} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBlAbn2DAuE4kSVDtsNgdttwDeBT78YmL8",
@@ -159,14 +159,14 @@ async function signUp() {
         
         Email.send({
             Host : "smtp.elasticemail.com",
-            Username : "noreply.mira@gmail.com",
+            Username : "ne.pas.rependre.ferticonnect@gmail.com",
             Password : "B58393493272B1AC4DFEF6455183C24DDCAB",
             To : registerEmail,
-            From : 'noreply.mira@gmail.com',
+            From : 'ne.pas.rependre.ferticonnect@gmail.com',
             Subject : "Confirmation de votre compte",
             Body : 
 
-                "Cher administrateur "+registerPrenom+" "+registerNom +",<br>"
+                "Cher "+registerPrenom+" "+registerNom +",<br>"
 
                 +"<br>Nous vous remercions de votre inscription sur notre plateforme. Pour finaliser la création de votre compte, veuillez utiliser le code de vérification suivant :"
                 
@@ -175,7 +175,7 @@ async function signUp() {
                 +"<br>Veuillez entrer ce code dans notre interface utilisateur pour confirmer votre compte. Si vous n'avez pas demandé cette procédure, vous pouvez ignorer ce message.<br>"
                
                 +'<br><br>Cordialement,'
-                +"<br>L'équipe de MIRA<br>" 
+                +"<br>L'équipe de FertiConnect<br>" 
 
                 +"<br><span style='color:red;'>Ce message a été envoyé automatiquement. Merci de ne pas y répondre.</span>",
 
@@ -198,7 +198,10 @@ async function signUp() {
             imguser:"",
             imgcouvertureuser:"",
             formulaire:"vide",
-            typeOfUser:typeOfUser
+            typeOfUser:typeOfUser,
+            lang:"Français",
+            timestamp: serverTimestamp()
+
         });
         const docRef = await addDoc(collection(db, 'rechercheliste'), {
             idelement: userCredential.user.uid,

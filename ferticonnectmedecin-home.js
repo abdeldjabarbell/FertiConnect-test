@@ -1,35 +1,452 @@
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc, addDoc,setDoc, deleteDoc, query, orderBy, limit, where, getDocs, collection, serverTimestamp as firestoreServerTimestamp  } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
+import { getStorage,  ref as storageRef  , uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-storage.js';
+import { getDatabase,  ref as databaseRef, push, onValue, serverTimestamp as databaseServerTimestamp  } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-database.js';
+import { serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBlAbn2DAuE4kSVDtsNgdttwDeBT78YmL8",
+    authDomain: "ferticonnect.firebaseapp.com",
+    projectId: "ferticonnect",
+    storageBucket: "ferticonnect.appspot.com",
+    messagingSenderId: "1061809723490",
+    appId: "1:1061809723490:web:307b939a9e256dcc21593b",
+    measurementId: "G-XZT8HYB0DT",
+    databaseURL: "https://ferticonnect-default-rtdb.europe-west1.firebasedatabase.app/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  const discussion_bg = document.querySelector('.discution_bg');
+  const option_header_message = document.getElementById('option_header_message');
+  const bottom_message_bar = document.getElementById('bottom_message');
+  discussion_bg.style.right = "-120%";
+  discussion_bg.style.zIndex = "240";
+  discussion_bg.style.transition = ".4s ease";
+  discussion_bg.style.position="fixed";
+  option_header_message.style.display="flex";
+  bottom_message_bar.style.bottom="-120%";
+  
+  const optionbg_wind_btn_liste_message = document.getElementById('optionbg_wind_btn_liste_message');
+  optionbg_wind_btn_liste_message.onclick = closemessagespace;
+  
+  function closemessagespace(){
+    const optionbg_wind = document.getElementById('optionbg_wind');
+    discussion_bg.style.right = "-120%";
+    discussion_bg.style.zIndex = "240";
+    discussion_bg.style.transition = ".4s ease";
+    discussion_bg.style.position="fixed";
+    option_header_message.style.display="flex";
+    bottom_message_bar.style.bottom="-120%";
+    optionbg_wind.style.display = "none";
+    const navbarbuttom = document.querySelector('.navbar_buttom');
+    navbarbuttom.style.bottom="0";
+    
+  }  
+
+  
+
+option_header_message.addEventListener('click', function() {
+    const optionbg_wind = document.querySelector('.optionbg_wind');
+    if( optionbg_wind.style.display === "flex"){
+       optionbg_wind.style.display = "none";
+    }else{
+       optionbg_wind.style.display = "flex";
+
+    }
+});
+
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user){
+        const mail = user.email;
+        const iduser = user.uid;
+        const doclistemessageref = collection(db,typeuserclick,iduser,"listeMessage");
+        const querySnapshot = await getDocs(doclistemessageref);
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const idRoomMessage= data.idRoomMessage;
+          const idamisMessage= data.idamisMessage;
+          const typeamisMessage= data.TypeamisMessage;
+          afficheLesDetaillesDeListe(idamisMessage,typeamisMessage,idRoomMessage);
+        });
+        async function afficheLesDetaillesDeListe(idamisMessage,typeamisMessage,idRoomMessage){
+            const docRef = doc(db, typeamisMessage, idamisMessage);
+            try {
+                const docSnap = await getDoc(docRef); 
+                if (docSnap.exists()) {
+                    const datauser = docSnap.data(); 
+                    const nameUserlisteamismessage = datauser.nom;
+                    const prenimUserlisteamismessage = datauser.prenom;
+                    const imageUserlisteamismessage = datauser.imguser;
+                    const  listemesagebg = document.getElementById("listemesagebg");
+                    const  amisbgmessage = document.createElement("div");
+                    amisbgmessage.className="amisbgmessage";
+                    const  imageamismessagebg = document.createElement("div");
+                    imageamismessagebg.className="imageamismessagebg";
+                    const  imageamismessagebgimg = document.createElement("img");
+                    if(imageUserlisteamismessage){
+                        imageamismessagebgimg.src= imageUserlisteamismessage;
+                    }else{
+                        imageamismessagebgimg.src= "img/ferticonnectiLogoWhite.png";
+                    }
+                    const  nameamismessagebg = document.createElement("div");
+                    nameamismessagebg.className="nameamismessagebg";
+                    const  nameamismessagebgh1 = document.createElement("h1");
+                    nameamismessagebgh1.innerHTML=prenimUserlisteamismessage+" "+nameUserlisteamismessage;
+                    imageamismessagebg.appendChild(imageamismessagebgimg);
+                    amisbgmessage.appendChild(imageamismessagebg);
+                    nameamismessagebg.appendChild(nameamismessagebgh1);
+                    amisbgmessage.appendChild(nameamismessagebg);
+                    listemesagebg.appendChild(amisbgmessage);
+                    amisbgmessage.onclick = amisbgmessageFunction;
+                    function amisbgmessageFunction(){
+                        afficherlesMessages(typeamisMessage, idamisMessage ,imageUserlisteamismessage,prenimUserlisteamismessage,nameUserlisteamismessage,idRoomMessage);
+                    }
+                }
+            }
+            catch (error){
+                console.error("-----",error);
+            }
+        }
+    }
+});
+
+
+async function afficherlesMessages(typeamisMessage, idamisMessage ,imageUserlisteamismessage,prenimUserlisteamismessage,nameUserlisteamismessage,idRoomMessage){
+    const discution_bg = document.getElementById("discution_bg");
+    discution_bg.style.right = "0";
+
+    bottom_message_bar.style.bottom="0";
+    const navbarbuttom = document.querySelector('.navbar_buttom');
+    navbarbuttom.style.bottom = '-120%';
+    if(window.innerWidth > 600){
+        var bottom_message = document.querySelector('.bottom_message').clientHeight;
+        messagesDiv.style.bottom = bottom_message+"px";
+        messagesDiv.style.position="absolute";
+      }
+    const Image_header_message = document.getElementById("Image_header_message");
+    const Image_header_messageimg = document.createElement("img");
+    if(imageUserlisteamismessage){
+        Image_header_messageimg.src= imageUserlisteamismessage;
+    }else{
+        Image_header_messageimg.src= "img/ferticonnectiLogoWhite.png";
+    }
+    Image_header_message.innerHTML="";
+    Image_header_message.appendChild(Image_header_messageimg);
+    const name_room_message = document.getElementById("name_room_message");
+    name_room_message.innerHTML=prenimUserlisteamismessage+" "+nameUserlisteamismessage;
+    
+    const database = getDatabase(app);
+    //const messageRef = databaseRef(database, 'messages');
+    const messageRef = databaseRef(database, idRoomMessage );
+
+    const messageInput = document.getElementById("messageecrit");
+    const sendButton = document.getElementById("sendmessageicon");
+    const messagesDiv = document.getElementById("content_message");
+    messagesDiv.style.width="100%";
+    wating.style.display="none";
+    sendButton.onclick = envoiyerMessage;
+    function envoiyerMessage() {
+        const message = messageInput.value.trim();
+        const user = auth.currentUser;
+        if (user) {
+            const userId = user.uid; 
+            console.log('userId ='+userId);
+
+            if (message !== "") {
+                push(messageRef, {
+                    text: message,
+                    id_usersent:userId,
+                    timestamp: new Date().getTime()
+                })
+                .then(() => {
+                    messageInput.value = "";
+                })
+                .catch((error) => {
+                    console.error("Error adding message: ", error);
+                });
+            }
+            else{
+                console.log("messageInput impty");
+            }
+          }else{console.log("user no");}
+    }
+    const photochanger_couverture_i = document.getElementById("photochanger_couverture_i");
+    const nouveauimage_couv = document.getElementById("nouveauimage_couv");
+    const fermer2 = document.getElementById("fermer2");
+    const partagerphotoPbtn_couv = document.getElementById("partagerphotoPbtn_couv");
+    const Done_couv = document.getElementById("Done_couv");
+    const loader_couv = document.getElementById("loader_couv");
+    const original_couv = document.getElementById("original_couv");
+    
+    const photocouverturechangerbg = document.getElementById("photocouverturechangerbg");
+    sendImageicon.onclick = openphotocouverturechangerbg;
+    function openphotocouverturechangerbg(){
+        photocouverturechangerbg.style.display="flex"
+    }
+    fermer2.onclick = closephotocouverturechangerbg;
+    function closephotocouverturechangerbg(){
+        photocouverturechangerbg.style.display="none"
+    }
+    let file1;
+    const photochanger_couverture = document.getElementById('photochanger_couverture');
+    photochanger_couverture.onclick = open_photochanger_couverture;
+    function open_photochanger_couverture(){
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.id = "fileInput1";
+        input.onchange = function(e) {
+            file1 = e.target.files[0];
+            var reader = new FileReader();
+            reader.readAsDataURL(file1);
+            reader.onload = function() {
+                const imageUrl = reader.result;
+                photochanger_couverture_i.style.display = "none";
+                nouveauimage_couv.style.display = "flex";
+                partagerphotoPbtn_couv.style.display = "block";
+                nouveauimage_couv.innerHTML = "";
+    
+                // Affichage de l'image dans la galerie
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                nouveauimage_couv.appendChild(img);
+            };
+        };
+        input.click();
+    }
+    partagerphotoPbtn_couv.onclick = partagerphotoPbtn_couvfunction;
+    async function partagerphotoPbtn_couvfunction(){
+          original_couv.style.display = "none";
+          loader_couv.style.display = "block";
+          loader_couv.style.color="white";
+          if (file1) {
+              try {
+                  
+                  const storageRef2 = storageRef(storage, 'images/' + file1.name);
+                  await uploadBytes(storageRef2, file1);
+                  const downloadURL2 = await getDownloadURL(storageRef2);
+                  const user = auth.currentUser;
+                  if (user) {
+                    const userId = user.uid; 
+                    if (downloadURL2) {
+                        push(messageRef, {
+                            image_message: downloadURL2,
+                            id_usersent:userId,
+                            timestamp: new Date().getTime()
+                        })
+                        .catch((error) => {
+                            console.error("Error adding message: ", error);
+                        });
+                    }
+                  }
+                  original_couv.style.display = "none";
+                  loader_couv.style.display = "none";
+                  Done_couv.style.display = "block";
+                  photocouverturechangerbg.style.display="none"
+                  
+              } catch (error) {
+                      console.error(error);
+                      original_couv.style.display = "block";
+                      loader_couv.style.display = "none";
+                      Done_couv.style.display = "none";
+                      photocouverturechangerbg.style.display="none"
+                  }
+              }
+    }
+    function displayMessages(snapshot) {
+        messagesDiv.innerHTML = "";
+        
+        snapshot.forEach((childSnapshot) => {
+            const message = childSnapshot.val().text;
+            const message_image = childSnapshot.val().image_message;
+            const mess_user_id = childSnapshot.val().id_usersent;
+            const user = auth.currentUser;
+
+            if (user) {
+              const userId = user.uid; 
+              if(mess_user_id === userId){
+                  const monM_bg = document.createElement("div");
+                  monM_bg.className = "monM_bg";
+                  const mon_message = document.createElement("div");
+                  mon_message.className = "mon_message";
+                  if(message){
+                      const messageElement = document.createElement("p");
+                      messageElement.innerHTML = message;
+                      mon_message.appendChild(messageElement);
+                  }
+                  if(message_image){
+                      const messageElement_img = document.createElement("img");
+                      messageElement_img.src = message_image;
+                      mon_message.appendChild(messageElement_img);
+                      messageElement_img.onclick = afficheimageFunction;
+                      function afficheimageFunction(){
+                          const afficheImagesBg = document.getElementById('afficheImagesBg');
+                          afficheImagesBg.style.display="flex";
+                          const afficheImage_place = document.getElementById('afficheImage_place');
+                          afficheImage_place.style.display="flex";
+                          afficheImage_place.innerHTML="";
+                          const afficheImage_placeimg = document.createElement("img");
+                          afficheImage_placeimg.src = message_image;
+                          afficheImage_place.appendChild(afficheImage_placeimg);
+                      }
+                  }
+                  mon_message.style.width="auto";
+                  mon_message.style.display="flex";
+                  monM_bg.appendChild(mon_message);
+                  messagesDiv.appendChild(monM_bg);
+              }else{
+                  const monM_bg = document.createElement("div");
+                  monM_bg.className = "autreM_bg";
+                  const mon_message = document.createElement("div");
+                  mon_message.className = "autre_message";
+                  if(message){
+                      const messageElement = document.createElement("p");
+                      messageElement.innerHTML = message;
+                      mon_message.appendChild(messageElement);
+                  }
+                  if(message_image){
+                      const messageElement_img = document.createElement("img");
+                      messageElement_img.src = message_image;
+                      mon_message.appendChild(messageElement_img);
+                      messageElement_img.onclick = afficheimageFunction;
+                      function afficheimageFunction(){
+                          const afficheImagesBg = document.getElementById('afficheImagesBg');
+                          afficheImagesBg.style.display="flex";
+                          const afficheImage_place = document.getElementById('afficheImage_place');
+                          afficheImage_place.style.display="flex";
+                          afficheImage_place.innerHTML="";
+                          const afficheImage_placeimg = document.createElement("img");
+                          afficheImage_placeimg.src = message_image;
+                          afficheImage_place.appendChild(afficheImage_placeimg);
+                      } 
+                  }
+                  mon_message.style.width="auto";
+                  monM_bg.appendChild(mon_message);
+                  messagesDiv.appendChild(monM_bg);
+              }
+            }
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    onValue(messageRef, (snapshot) => {
+       displayMessages(snapshot);
+    });
+
+
+   // const docRef = doc(db, typeamisMessage, idamisMessage);
+   // try {
+   //     const docSnap = await getDoc(docRef); 
+   //     if (docSnap.exists()) {
+   //         const datauser = docSnap.data(); 
+   //         const nameUserlisteamismessage = datauser.nom;
+   //         const prenimUserlisteamismessage = datauser.prenom;
+   //     }
+   // }catch{
+   // }
+   
+
+
+
+}
+
+const afficheImagesBg = document.getElementById('afficheImagesBg');   
+afficheImagesBg.onclick = closeafficheImagesBgFunction;
+function closeafficheImagesBgFunction(){
+    const afficheImagesBg = document.getElementById('afficheImagesBg');
+    afficheImagesBg.style.display="none";
+    const afficheImage_place = document.getElementById('afficheImage_place');
+    afficheImage_place.style.display="none"
+    afficheImage_place.innerHTML="";
+}  
+
+
+const sendImageicon = document.getElementById('sendImageicon');
+const sendmessageicon = document.getElementById('sendmessageicon');
+const QMPEUM_ = document.getElementById('QMPEUM');
+  
 function tailledecran(){
     const navbar_buttom = document.getElementById('navbar_buttom');
-
     if (window.innerWidth < 600) {
         navbar_buttom.style.display="flex";
     } else {
         navbar_buttom.style.display="none";
     }
 }
+var navigationbarHeight = document.querySelector('.navigationbar').clientHeight;
+
+const rightespace = document.querySelector('.rightespace');
+const leftespace = document.querySelector('.leftespace');
+const midleespace = document.querySelector('.midleespace');
+const navbarbuttom = document.querySelector('.navbar_buttom');
+
 
 const homebtnnavbuttom = document.getElementById('homebtnnavbuttom');
 const cabinsbtnnavbuttom = document.getElementById('cabinsbtnnavbuttom');
 const messagebtnnavbuttom = document.getElementById('messagebtnnavbuttom');
-homebtnnavbuttom.addEventListener('click', function() {
+
+homebtnnavbuttom.onclick = homebtnnavbuttomFunction;
+function homebtnnavbuttomFunction(){
     leftespace.style.display = "none";
     rightespace.style.display = "none";
     midleespace.style.display = "flex";
-    scrollToTop()
-});
-cabinsbtnnavbuttom.addEventListener('click', function() {
+    scrollToTop();
+}
+
+cabinsbtnnavbuttom.onclick = cabinsbtnnavbuttomFunction;
+function cabinsbtnnavbuttomFunction(){
     leftespace.style.display = "flex";
     rightespace.style.display = "none";
     midleespace.style.display = "none";
-    scrollToTop()
-});
-messagebtnnavbuttom.addEventListener('click', function() {
+    scrollToTop();
+}
+
+messagebtnnavbuttom.onclick = messagebtnnavbuttomFunction;
+function messagebtnnavbuttomFunction(){
+
+    var bgHome = document.querySelector('.bgHome');
+    bgHome.style.padding="0";
+    var navigationbar = document.querySelector('.navigationbar');
+    navigationbar.style.display = "none";
+    
     leftespace.style.display = "none";
     rightespace.style.display = "flex";
     midleespace.style.display = "none";
-    scrollToTop()
-});
+    navbarbuttom.style.display = "flex";
+
+    var navbar_buttom = document.querySelector('.navbar_buttom').clientHeight; 
+    const height_disc_bg = window.innerHeight  - navigationbarHeight ;
+    discution_bg.style.height = height_disc_bg + "px";
+    var bottom_message = document.querySelector('.bottom_message').clientHeight;
+    var header_message = document.querySelector('.header_message').clientHeight;
+    content_message.style.height = height_disc_bg - header_message + "px";
+    console.log("content_message = "+content_message.style.height +"   /header_message="+header_message);
+    const optionbg_wind = document.querySelector('.optionbg_wind');
+    optionbg_wind.style.top =header_message + "px";
+    const option_header_message = document.getElementById('option_header_message');
+    const optionbg_wind_btn_home = document.getElementById('optionbg_wind_btn_home');
+
+
+    optionbg_wind_btn_home.addEventListener('click', function() {
+       refreshPage();
+    });  
+    var contentMessage = document.querySelector('.content_message');
+    if (contentMessage.scrollTo) {
+        contentMessage.scrollTo({
+          top: contentMessage.scrollHeight ,
+          behavior: 'smooth' // pour un défilement fluide si pris en charge
+        });
+    } else {
+       contentMessage.scrollTop = contentMessage.scrollHeight ;
+    }
+
+}
 
 
 
@@ -46,6 +463,13 @@ const inputpublication = document.getElementById('inputpubadd');
 inputpublication.addEventListener('input', function() {
     inputpublication.style.height = 'auto'; // Réinitialise d'abord la hauteur à automatique
     inputpublication.style.height = inputpublication.scrollHeight + 'px'; // Ajuste ensuite la hauteur en fonction du contenu
+});
+
+const inputCommentaire = document.getElementById('inputpubadd_comment');
+
+inputCommentaire.addEventListener('input', function() {
+    inputCommentaire.style.height = 'auto'; // Réinitialise d'abord la hauteur à automatique
+    inputCommentaire.style.height = inputCommentaire.scrollHeight + 'px'; // Ajuste ensuite la hauteur en fonction du contenu
 });
 
 const mescabins_ = document.getElementById('mescabins_');
@@ -77,6 +501,21 @@ titleoptionmycabinsbg2.addEventListener('click', function() {
     }
 });
 
+// langues liste 
+const mescabins_3 = document.getElementById('mescabins_3');
+const mycabinsbg3 = document.getElementById('mycabinsbg3');
+const titleoptionmycabinsbg3 = document.getElementById('titleoptionmycabinsbg3');
+
+titleoptionmycabinsbg3.addEventListener('click', function() {
+    if(mescabins_3.style.display === "none") {
+        mescabins_3.style.display = "flex";
+        mycabinsbg3.style.height = "400px";
+    } else {
+        mescabins_3.style.display = "none";
+        mycabinsbg3.style.height = "auto";
+    }
+});
+
 
 
 
@@ -98,31 +537,22 @@ icons.forEach(function(icon) {
 });
 
 
+const head_commentaire_ = document.querySelector('.head_commentaire_');
+const addcommentaire_bg = document.querySelector('.addcommentaire_bg');
+const commentaire_ = document.querySelector('.commentaire_');
+const listeComments_bg = document.querySelector('.commentaire_');
 
+const closecommentair = document.getElementById("closecommentair");
+const commentaire_bg = document.getElementById("commentaire_bg");
 
+closecommentair.onclick = closecommentairFunction;
 
+function closecommentairFunction(){
+    commentaire_bg.style.display="none";
+    const listeComments_bg_list = document.getElementById("listeComments_bg_list");
+    listeComments_bg_list.innerHTML="";
+}
 
-
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js";
-import { getAuth ,signOut} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-auth.js";
-import { getFirestore, doc, getDoc,updateDoc ,addDoc,deleteDoc, query, orderBy,limit,where, getDocs, collection, serverTimestamp} from "https://www.gstatic.com/firebasejs/9.6.5/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-storage.js';
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBlAbn2DAuE4kSVDtsNgdttwDeBT78YmL8",
-    authDomain: "ferticonnect.firebaseapp.com",
-    projectId: "ferticonnect",
-    storageBucket: "ferticonnect.appspot.com",
-    messagingSenderId: "1061809723490",
-    appId: "1:1061809723490:web:307b939a9e256dcc21593b",
-    measurementId: "G-XZT8HYB0DT"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
 
 
 const boxactivation = document.getElementById("boxactivation");
@@ -139,6 +569,117 @@ const urlParams = new URLSearchParams(window.location.search);
 const typeuserclick = urlParams.get('typeuserclick');
 const typeOfUser = urlParams.get('typeuserclick');
 
+
+            //---------------- send message 
+
+            
+// const afficheImagesBg = document.getElementById('afficheImagesBg');   
+// afficheImagesBg.onclick = closeafficheImagesBgFunction;
+// function closeafficheImagesBgFunction(){
+//     const afficheImagesBg = document.getElementById('afficheImagesBg');
+//     afficheImagesBg.style.display="none";
+//     const afficheImage_place = document.getElementById('afficheImage_place');
+//     afficheImage_place.style.display="none"
+//     afficheImage_place.innerHTML="";
+// }  
+
+
+
+
+   const content_message = document.querySelector('.content_message');
+   const height_disc_bg = window.innerHeight  - navigationbarHeight;
+   discution_bg.style.height = height_disc_bg + "px";
+   
+   var bottom_message = document.querySelector('.bottom_message').clientHeight;
+   var header_message = document.querySelector('.header_message').clientHeight;
+   content_message.style.height = height_disc_bg -bottom_message -header_message +"px";
+   console.log("content_message = "+content_message.style.height +"   /header_message="+header_message);
+   
+   const optionbg_wind = document.querySelector('.optionbg_wind');
+   optionbg_wind.style.top =header_message + "px";
+   
+   const optionbg_wind_btn_home = document.getElementById('optionbg_wind_btn_home');
+
+   
+   
+   var contentMessage = document.querySelector('.content_message');
+   if (contentMessage.scrollTop !== undefined) {
+       contentMessage.scrollTop = contentMessage.scrollHeight;
+   } else {
+       contentMessage.scrollTo({
+           top: contentMessage.scrollHeight,
+           behavior: 'smooth' // pour un défilement fluide si pris en charge
+       });
+   }
+   
+function toggleScrollButton() {
+    
+    var contentMessage = document.querySelector('.content_message');
+    var scrollButton = document.getElementById('scrollButton');
+
+    // Utilisation de la propriété scrollHeight pour vérifier si le contenu est en bas
+    if (contentMessage.scrollTop + contentMessage.clientHeight  < contentMessage.scrollHeight -300 ||
+        document.documentElement.scrollTop + window.innerHeight  < document.documentElement.scrollHeight -300) {
+        scrollButton.style.bottom = "40px"; // Utilisation de 'bottom' au lieu de 'buttom'
+    } else {
+        scrollButton.style.bottom = "-30px"; // Utilisation de 'bottom' au lieu de 'buttom'
+    }
+}
+
+
+    
+  document.getElementById('content_message').addEventListener('scroll', toggleScrollButton);
+
+
+ 
+   optionbg_wind_btn_home.addEventListener('click', function() {
+    refreshPage();
+  }); 
+
+  var scrollButton = document.getElementById('scrollButton');
+  var contentMessage = document.querySelector('.content_message');
+
+  scrollButton.addEventListener('click', function() {
+    contentMessage.scrollTop = contentMessage.scrollHeight;
+
+      //if (contentMessage.scrollTo) {
+      //    contentMessage.scrollTo({
+      //        top: contentMessage.scrollHeight,
+      //        behavior: 'smooth' // pour un défilement fluide si pris en charge
+      //    });
+      //} else {
+      //    // Alternative pour les navigateurs ne prenant pas en charge scrollTo
+      //    contentMessage.scrollTop = contentMessage.scrollHeight;
+      //}
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+if(typeOfUser==="medecin"){
+    const veri_acco = document.getElementById("veri_acco");
+    veri_acco.style.display="flex";
+}
+else{
+    const veri_acco = document.getElementById("veri_acco");
+    veri_acco.style.display="none";
+}
+
   auth.onAuthStateChanged(async (user) => {
     if (user) {
         // Récupération de l'adresse e-mail de l'utilisateur connecté
@@ -148,6 +689,7 @@ const typeOfUser = urlParams.get('typeuserclick');
         const userRef = doc(db, typeuserclick, userId);
         const docSnapshot = await getDoc(userRef);
         
+        
         if (docSnapshot.exists()) {
             const photoprofilepubadd = document.getElementById("photoprofilepubadd");
             const photoprofilepubadd1 = document.getElementById("photoprofilepubadd1");
@@ -156,6 +698,9 @@ const typeOfUser = urlParams.get('typeuserclick');
                 photoprofilepubadd.src=imguser;
                 photoprofilepubadd1.src=imguser;
                   photoprofilepubadd.addEventListener('click', () => {
+                       window.location.href = `ferticonnectmedecin-profilepage.html?useridclick=${userId}&typeuserclick=${typeuserclick}&typeOfUser=${typeOfUser}`; // Redirection vers la page du produit avec l'ID du produit
+                  }); 
+                  photoprofilepubadd1.addEventListener('click', () => {
                        window.location.href = `ferticonnectmedecin-profilepage.html?useridclick=${userId}&typeuserclick=${typeuserclick}&typeOfUser=${typeOfUser}`; // Redirection vers la page du produit avec l'ID du produit
                   }); 
             }
@@ -171,13 +716,8 @@ const typeOfUser = urlParams.get('typeuserclick');
             const data = doc.data();
             const iduseramis = data.iduser;
             const typeuseramis = data.typeuser;
-            console.log("iduseramis="+iduseramis);
-            console.log("typeuseramis="+typeuseramis);
+
             recupereAmis(iduseramis,typeuseramis);
-
-
-
-        
 
         });
         async function recupereAmis(iduseramis,typeuseramis){
@@ -212,6 +752,115 @@ const typeOfUser = urlParams.get('typeuserclick');
             mescabins_name.appendChild(mescabins_nameh1);
             cabinfoss.appendChild(mescabins_name);
             mescabins_2.appendChild(cabinfoss);
+
+            cabinfoss.addEventListener('click', () => {
+                window.location.href = `ferticonnectmedecin-profilepage.html?useridclick=${iduseramis}&typeuserclick=${typeuseramis}&typeOfUser=${typeOfUser}`; // Redirection vers la page du produit avec l'ID du produit
+            }); 
+        }
+        
+
+        const cabinequerySnapshot = await getDocs(query(collection(db, typeOfUser,userId,"cabines")));
+        cabinequerySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const cabineId = data.cabineId;
+            recupereCabine(cabineId);
+
+        });
+        
+        async function recupereCabine(cabineId){
+            const docRef = doc(db, "cabines", cabineId);
+            const docSnap = await getDoc(docRef); 
+            const dataCabine = docSnap.data(); 
+            const nameCabine = dataCabine.nameCabine;
+            const cabine_Image = dataCabine.cabineImage;
+            const creator_Id = dataCabine.creatorId;
+            
+            const cabinfoss = document.createElement('div');
+            cabinfoss.className="cabinfoss";
+
+            const mescabins_image = document.createElement('div');
+            mescabins_image.className="mescabins_image";
+
+            const mescabins_image_img = document.createElement('img');
+            if(cabine_Image){
+                mescabins_image_img.src=cabine_Image;
+            }else{
+                mescabins_image_img.src="img/ferticonnectiLogoWhite.png";
+            }
+            const mescabins_name = document.createElement('div');
+            mescabins_name.className="mescabins_name";
+            
+            const mescabins_nameh1 = document.createElement('h1');
+            mescabins_nameh1.innerHTML= nameCabine;
+
+            mescabins_image.appendChild(mescabins_image_img);
+            cabinfoss.appendChild(mescabins_image);
+            mescabins_name.appendChild(mescabins_nameh1);
+            cabinfoss.appendChild(mescabins_name);
+            mescabins_.appendChild(cabinfoss);
+
+
+           cabinfoss.addEventListener('click', () => {
+               window.location.href = `ferticonnectmedecin-cabine.html?cabineidclick=${cabineId}&typeuserclick=${typeuserclick}`; // Redirection vers la page du produit avec l'ID du produit
+           }); 
+        }
+
+
+        //const langauequerySnapshot = doc(db, typeOfUser, userId);
+        const langauequerySnapshot = await getDocs(query(collection(db, "languesList")));
+        langauequerySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const langue = data.langue;
+            const langue_image = data.img_langue;
+            console.log("langaue database = "+langue);
+            recupereLang(langue,langue_image);
+
+        });
+        async function recupereLang(langue,langue_image){
+            const docRef = doc(db, typeOfUser, userId);
+            const docSnap = await getDoc(docRef); 
+            const datauser = docSnap.data(); 
+            const lang = datauser.lang;
+
+           // console.log("typeOfUser ="+typeOfUser);
+           // console.log("userId ="+userId);
+           // console.log("lang  ="+lang);
+
+
+
+            const cabinfoss = document.createElement('div');
+            cabinfoss.className="cabinfoss";
+
+            const mescabins_image = document.createElement('div');
+            mescabins_image.className="mescabins_image";
+
+            const mescabins_image_img = document.createElement('img');
+            if(langue_image){
+                mescabins_image_img.src=langue_image;
+            }else{
+                mescabins_image_img.src="img/ferticonnectiLogoWhite.png";
+            }
+            const mescabins_name = document.createElement('div');
+            mescabins_name.className="mescabins_name";
+            const mescabins_nameh1 = document.createElement('h1');
+            mescabins_nameh1.innerHTML=" "+langue+" ";
+
+            const langue_check = document.createElement('div');
+            langue_check.className="langue_check";
+            const langue_check_i = document.createElement('i');
+            langue_check_i.className='bi bi-check-lg';
+
+            mescabins_image.appendChild(mescabins_image_img);
+            cabinfoss.appendChild(mescabins_image);
+
+            mescabins_name.appendChild(mescabins_nameh1);
+            cabinfoss.appendChild(mescabins_name);
+
+            if(lang === langue){
+                langue_check.appendChild(langue_check_i);
+                cabinfoss.appendChild(langue_check);
+            }
+            mescabins_3.appendChild(cabinfoss);
 
             cabinfoss.addEventListener('click', () => {
                 window.location.href = `ferticonnectmedecin-profilepage.html?useridclick=${iduseramis}&typeuserclick=${typeuseramis}&typeOfUser=${typeOfUser}`; // Redirection vers la page du produit avec l'ID du produit
@@ -495,13 +1144,15 @@ querySnapshot.forEach((doc) => {
     const pubbg_ = document.createElement("div");
     pubbg_.className = "pubbg_";
     creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imageUrl_publication,publication,idpub);
-    lespublicationslist.appendChild(pubbg_);
+    if(placepub === "home"){
+        lespublicationslist.appendChild(pubbg_);
+    }
 
 });
 
 
 async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imageUrl_publication,publication,idpub){
-
+    
     // Référence au document utilisateur
     const docRef = doc(db, typeuser, iduser);
     try {
@@ -520,6 +1171,7 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
                 const infouser_ = document.createElement("div");
                 infouser_.className = "infouser_";
 
+
                 const image_user_pub = document.createElement("div");
                 image_user_pub.className = "image_user_pub";
 
@@ -529,15 +1181,40 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
                 } else {
                     image_user_pub_img.src = "img/ferticonnectiLogoWhite.png";
                 }
+                
 
-                image_user_pub.appendChild(image_user_pub_img);
-                infouser_.appendChild(image_user_pub);
 
                 const nameuserpub = document.createElement("div");
                 nameuserpub.className = "nameuserpub";
                 const nameuserpubh1 = document.createElement("h1");
-                nameuserpubh1.innerHTML =prenameuser+ " " + nameuser;
+                if (typeuser === "patient") {
+                    if(typeOfUser === "patient"){
+                        auth.onAuthStateChanged(async(user) => {
+                            if (user) {
+                                const userId = user.uid;
+                                if(iduser === userId){
+                                    nameuserpubh1.innerHTML =prenameuser+ " " + nameuser;
+                                }
+                                else{
+                                    image_user_pub_img.src = "img/ferticonnectiLogoWhite.png";
+                                    nameuserpubh1.innerHTML ="Utilisateur fertiConnect";
 
+                                }
+
+                            }
+                        });
+                    }
+                    else{
+                        nameuserpubh1.innerHTML =prenameuser+ " " + nameuser;
+
+                    }
+                }
+                else{
+                     nameuserpubh1.innerHTML =prenameuser+ " " + nameuser;
+
+                }
+                image_user_pub.appendChild(image_user_pub_img);
+                infouser_.appendChild(image_user_pub);
                 nameuserpub.appendChild(nameuserpubh1);
                 infouser_.appendChild(nameuserpub);
                 infouser_.addEventListener('click', () => {
@@ -551,6 +1228,7 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
                     verifica_i.className = "bi bi-patch-check-fill";
                     verifica.appendChild(verifica_i);
                 }
+
                 infouser_.appendChild(verifica);
 
                 const verifica1 = document.createElement("div");
@@ -569,7 +1247,7 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
 
                 pubbg_.appendChild(headerpublication);
 
-
+                
                 const textpublication = document.createElement("p");
                 textpublication.className="textpublication";
                 textpublication.innerHTML=publication;
@@ -613,7 +1291,14 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
                 const commentsnum_i = document.createElement("i");
                 commentsnum_i.className = "bi bi-chat-left";
                 const commentsnum_p = document.createElement("p");
-                commentsnum_p.innerHTML = "0";
+                numbercommentaires();
+                async function numbercommentaires(){
+                    const docRef = collection(db, "publications", idpub, "commentaires");
+                    const querySnapshot = await getDocs(docRef);
+                    const numberOfDocuments = querySnapshot.size;
+                    commentsnum_p.innerHTML = numberOfDocuments;
+
+                }
                 commentsnum.appendChild(commentsnum_i);
                 commentsnum.appendChild(commentsnum_p);
                 jaimeandcommentsnum.appendChild(commentsnum);
@@ -648,6 +1333,180 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
                 btncomment.className = "btncomment";
                 const btncomment_i = document.createElement("i");
                 btncomment_i.className = "bi bi-chat-left";
+
+                btncomment.onclick = afficheLesCommentairesFunction;
+
+                async function afficheLesCommentairesFunction() {
+                    commentaire_bg.style.display="flex";
+                    
+                    const height_commentaire_= commentaire_.getBoundingClientRect().height;
+                    const height_addcommentaire_bg = addcommentaire_bg.getBoundingClientRect().height;
+                    const height_head_commentaire_ = head_commentaire_.getBoundingClientRect().height;
+                    commentaire_.style.paddingTop = height_head_commentaire_ + 'px';
+                    commentaire_.style.paddingBottom = height_addcommentaire_bg + 'px';
+                    listeComments_bg.height=(height_commentaire_-height_head_commentaire_+height_addcommentaire_bg)+ 'px';
+
+                    const send_comment = document.getElementById("send_comment");
+                    const photoprofilepubadd_comments = document.getElementById('photoprofilepubadd_comments');
+                    
+                    if (user) {
+                        
+                        const userId = user.uid;
+                        const userRef = doc(db, typeOfUser, userId);
+                        const docSnapshot = await getDoc(userRef);
+                    
+                            const imguser = docSnapshot.data().imguser;
+                            console.log(imguser);
+                            if (imguser) {
+                                photoprofilepubadd_comments.src = imguser;
+                            } else {
+                                photoprofilepubadd_comments.src = "img/ferticonnectiLogoWhite.png";
+                            }
+                    }
+                    AficherLesCommentaire();
+                    async function AficherLesCommentaire(){
+                        const listeComments_bg_list = document.getElementById("listeComments_bg_list");
+                        listeComments_bg_list.innerHTML="";
+                        
+                         const querySnapshot = await getDocs(query(collection(db, "publications", idpub, "commentaires"), orderBy('timestamp', 'desc')));
+                            querySnapshot.forEach(async (doc) => {
+                                const idcommentaire = doc.id;
+                                const data = doc.data();
+                                const commentaires = data.commentaires;
+                                const iduser_comment = data.iduser_comment;
+                                const typeusercomment = data.typeuser;
+                                const timestamp = data.timestamp;
+                                await importusercommentinfo(typeusercomment, iduser_comment, commentaires, timestamp);
+                            });
+       
+
+
+                    }
+                    
+                    async function importusercommentinfo(typeusercomment, iduser_comment, commentaires, timestamp) {
+                        const docRef = doc(db, typeusercomment, iduser_comment);
+                        try {
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                
+                                const datauser = docSnap.data();
+                                const nameuser = datauser.nom;
+                                const prenameuser = datauser.prenom;
+                                const imguser = datauser.imguser;
+
+                                const listeComments_bg_list = document.getElementById("listeComments_bg_list");
+                    
+                                const comment_listeComments_bg = document.createElement('div');
+                                comment_listeComments_bg.className = "comment_listeComments_bg";
+                    
+                                const hedercomment = document.createElement('div');
+                                hedercomment.className = "hedercomment";
+                    
+                                const hedercomment_img = document.createElement('div');
+                                hedercomment_img.className = "hedercomment_img";
+
+                                const hedercomment_img_img = document.createElement('img');
+                                const hedercomment_h1 = document.createElement('h1');
+
+                                const hedercomment_i= document.createElement('i');
+                                if(typeusercomment === "medecin"){
+                                    hedercomment_i.className="bi bi-patch-check-fill";
+                                }
+                                const content_comment = document.createElement('div');
+                                content_comment.className = "content_comment";
+                                
+                                const content_comment_p = document.createElement('p');
+                                content_comment_p.innerHTML = commentaires;
+                                if (typeuser === "patient") {
+                                    if(typeOfUser === "patient"){
+                                        auth.onAuthStateChanged(async(user) => {
+                                            if (user) {
+                                                const userId = user.uid;
+                                                if(iduser_comment === userId){
+                                                    hedercomment_h1.innerHTML = nameuser + " " + prenameuser;
+                                                    hedercomment_img_img.src = imguser;
+
+                                                }
+                                                else{
+                                                    hedercomment_h1.innerHTML ="Utilisateur fertiConnect";
+                                                    hedercomment_img_img.src = "img/ferticonnectiLogoWhite.png";
+
+                                                }
+                
+                                            }
+                                        });
+                                    }
+                                    else{
+                                        hedercomment_h1.innerHTML = nameuser + " " + prenameuser;
+                                        hedercomment_img_img.src = imguser ? imguser : "img/ferticonnectiLogoWhite.png";
+
+
+                                    }
+                                }
+                                else{
+                                    hedercomment_h1.innerHTML = nameuser + " " + prenameuser;
+                                    hedercomment_img_img.src = imguser ? imguser : "img/ferticonnectiLogoWhite.png";
+
+
+                                }
+                    
+                                hedercomment_img.appendChild(hedercomment_img_img);
+                                hedercomment.appendChild(hedercomment_img);
+                                hedercomment.appendChild(hedercomment_h1);
+                                hedercomment.appendChild(hedercomment_i);
+                                content_comment.appendChild(content_comment_p);
+                                comment_listeComments_bg.appendChild(hedercomment);
+                                comment_listeComments_bg.appendChild(content_comment);
+                                listeComments_bg_list.appendChild(comment_listeComments_bg);
+
+                            }
+
+
+                        } catch (error) {
+                            console.error("Une erreur s'est produite lors de l'importation des informations utilisateur :", error);
+                        }
+                    }
+                     
+
+                    send_comment.onclick = send_commentFunction;
+
+                    async function send_commentFunction(){
+                        sharePublicationComment();
+                        numbercommentaires();
+                    }
+                    
+                    async function sharePublicationComment() {
+                        wating.style.display = "flex";
+                        auth.onAuthStateChanged(async(user) => {
+                            if (user) {
+                                const userId = user.uid;
+                                    try {
+                                        const inputpubadd_comment = document.getElementById("inputpubadd_comment").value;
+                                        const docRef = await addDoc(collection(db, "publications", idpub, "commentaires"), {
+                                            commentaires: inputpubadd_comment,
+                                            iduser_comment: userId,
+                                            typeuser: typeOfUser,
+                                            timestamp: serverTimestamp()
+                                        });
+
+                                        wating.style.display = "none";
+                                        const inputpubadd_comme = document.getElementById("inputpubadd_comment");
+                                        inputpubadd_comme.value="";
+
+                                        AficherLesCommentaire();
+
+
+                                    } catch (error) {
+                                        console.error(error);
+                                        wating.style.display = "none";
+                                        //message_cree_produit.innerHTML = 'Erreur lors du partage du produit: ' + error.message;
+                                    }
+                            }
+                        });
+                    }
+                    
+                }
+
                 btncomment.appendChild(btncomment_i);
                 jaimecommentbtns.appendChild(btncomment);
                 pubbg_.appendChild(jaimecommentbtns);
@@ -723,8 +1582,6 @@ async function creatpost(pubbg_,iduser,typeuser,placepub,formattedTimestamp,imag
 
     
 }
-
-
 
 
 
